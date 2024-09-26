@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    tools {
+        maven 'maven'
+    }
+    stages {
+        stage('Build Maven') {
+            steps{checkout([$class: 'GitSCM', branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-credential', url: 'https://github.com/saikumarchaga/spring-petclinic.git']]])
+                sh  "./mvnw clean package"
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh 'docker build -t spring-petclinic . '
+                    sh 'docker tag spring-petclinic:latest saikumar4268/spring-petclinic'
+                }
+            }
+        }
+        stage('Push Docker image') {
+            steps {
+                withCredentials([string(credentialsId: 'saikumar4268', variable: 'dockerhubpwd')]) {
+                sh 'docker login -u saikumar4268 -p ${dockerhubpwd}'       
+}
+                sh 'docker push saikumar4268/spring-petclinic'
+                }
+            }
+        }
+                    
+    }
